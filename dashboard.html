@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="data:,">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>✨ AI News Dashboard</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Enhanced Light Mode - Softer, more premium palette */
+            --bg-primary: #fefefe;
+            --bg-secondary: linear-gradient(135deg, #f8fafc 0%, #f0f4f8 50%, #e8f0fe 100%);
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border-color: rgba(229, 231, 235, 0.6);
+            
+            /* Refined Color Palette */
+            --primary-50: #eff6ff;
+            --primary-500: #2563eb;
+            --primary-600: #1d4ed8;
+            --primary-700: #1e3a8a;
+            --secondary-500: #0ea5e9;
+            --success-500: #10b981;
+            --warning-500: #f59e0b;
+            --error-500: #ef4444;
+            
+            /* Dark Mode */
+            --bg-dark-primary: #09090b;
+            --bg-dark-secondary: linear-gradient(135deg, #18181b 0%, #111827 50%, #0f172a 100%);
+            --card-dark-bg: rgba(17, 24, 39, 0.98);
+            --text-dark-primary: #f9fafb;
+            --text-dark-secondary: #d1d5db;
+            --border-dark-color: rgba(75, 85, 99, 0.4);
+        }
+
+        * { 
+            box-sizing: border-box; 
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+        }
+
+        .dark {
+            background: var(--bg-dark-secondary);
+            color: var(--text-dark-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin: 0.5rem 0 2rem;
+            font-weight: 400;
+        }
+
+        .dark .subtitle {
+            color: var(--text-dark-secondary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+            position: sticky;
+            top: 0;
+            background: inherit;
+            padding: 1rem 0;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        input, select, button {
+            padding: 0.75rem 1.25rem;
+            border-radius: 50px;
+            border: 2px solid var(--border-color);
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+        }
+
+        .dark input, .dark select, .dark button {
+            background: var(--card-dark-bg);
+            color: var(--text-dark-primary);
+            border-color: var(--border-dark-color);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(37, 99, 235, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 2.5rem 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .trending-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .trend {
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            background: rgba(37, 99, 235, 0.15);
+            border: 2px solid rgba(37, 99, 235, 0.3);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        .dark .trend {
+            background: rgba(37, 99, 235, 0.25);
+            border-color: rgba(37, 99, 235, 0.5);
+            color: var(--text-dark-primary);
+        }
+
+        .trend:hover {
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+            color: white;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            padding: 1.75rem;
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-500), var(--secondary-500), var(--primary-500));
+            border-radius: 24px 24px 0 0;
+        }
+
+        .dark .card {
+            background: var(--card-dark-bg);
+            border-color: var(--border-dark-color);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .card.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .dark .card:hover {
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h3 {
+            margin: 0 0 1rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.3;
+            color: var(--text-primary);
+        }
+
+        .dark .card h3 {
+            color: var(--text-dark-primary);
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .card-meta span:first-child {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .dark .card-meta span:first-child {
+            color: var(--text-dark-secondary);
+        }
+
+        .badge {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .positive { 
+            background: linear-gradient(135deg, var(--success-500) 0%, #059669 100%);
+            color: white; 
+        }
+
+        .negative { 
+            background: linear-gradient(135deg, var(--error-500) 0%, #dc2626 100%);
+            color: white; 
+        }
+
+        .neutral { 
+            background: linear-gradient(135deg, var(--warning-500) 0%, #d97706 100%);
+            color: white; 
+        }
+
+        .card-summary {
+            line-height: 1.6;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .dark .card-summary {
+            color: var(--text-dark-secondary);
+        }
+
+        /* Map Section */
+        .map-section {
+            margin: 3rem 0;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+        }
+
+        .dark .map-section {
+            background: var(--card-dark-bg);
+            border-color: var(--border-dark-color);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .map-header {
+            padding: 1.5rem 2rem;
+            background: linear-gradient(135deg, var(--primary-50) 0%, transparent 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark .map-header {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .map-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .dark .map-title {
+            color: var(--text-dark-primary);
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .loader {
+            text-align: center;
+            margin: 4rem 0;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .dark .loader {
+            color: var(--text-dark-secondary);
+        }
+
+        .loader i {
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .map-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            #map {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-sparkles"></i> AI News Dashboard</h1>
+            <p class="subtitle">Intelligent news curation powered by cutting-edge AI</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="search" placeholder="🔍 Search AI news...">
+            <select id="filter">
+                <option value="All">All Categories</option>
+                <option value="Technology">Technology</option>
+                <option value="Business">Business</option>
+                <option value="Politics">Politics</option>
+                <option value="Science">Science</option>
+                <option value="AI Ethics">AI Ethics</option>
+            </select>
+            <button onclick="toggleTheme()"><i class="fas" id="themeIcon">🌙</i> Theme</button>
+            <button onclick="logout()">🚪 Logout</button>
+        </div>
+
+        <h3 class="section-title"><i class="fas fa-fire"></i> Trending Now</h3>
+        <div class="trending-container" id="trending"></div>
+
+        <!-- Global AI News Map -->
+        <div class="map-section" id="mapSection">
+            <div class="map-header">
+                <h3 class="map-title">
+                    <i class="fas fa-globe"></i> Global AI News Map
+                </h3>
+                <button onclick="toggleMapMarkers()" id="mapToggle">
+                    <i class="fas fa-map-marker-alt"></i> Show News Locations
+                </button>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <h3 class="section-title"><i class="fas fa-newspaper"></i> Latest News</h3>
+        <div id="loader" class="loader"><i class="fas fa-spinner"></i> Loading fresh AI news...</div>
+        <div id="news" class="news-grid"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        const API = "http://127.0.0.1:8000";
+        let allNews = [];
+        let map;
+        let newsMarkers = [];
+        let showMarkers = false;
+
+        // Token check
+        const token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "index.html";
+        }
+
+        // Theme management
+        const themeIcon = document.getElementById("themeIcon");
+        if (localStorage.getItem("theme") === "dark") {
+            document.body.classList.add("dark");
+            themeIcon.textContent = "☀️";
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("dark");
+            const isDark = document.body.classList.contains("dark");
+            themeIcon.textContent = isDark ? "☀️" : "🌙";
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+            // Update map if initialized
+            if (map) updateMapTheme();
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "index.html";
+        }
+
+        // Initialize Leaflet Map
+        function initMap() {
+            map = L.map('map').setView([20, 0], 2);
+            
+            const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            });
+            tileLayer.addTo(map);
+
+            // Sample AI hubs - replace with real news geo data
+            const aiHubs = [
+                { coords: [37.7749, -122.4194], name: "San Francisco - AI Valley", popup: "Silicon Valley AI Innovation Hub" },
+                { coords: [40.7128, -74.0060], name: "New York", popup: "AI Finance & Media Center" },
+                { coords: [51.5074, -0.1278], name: "London", popup: "European AI Research Hub" },
+                { coords: [48.8566, 2.3522], name: "Paris", popup: "AI Ethics & Regulation Center" },
+                { coords: [35.6762, 139.6503], name: "Tokyo", popup: "Robotics & AI Innovation" },
+                { coords: [22.3193, 114.1694], name: "Hong Kong", popup: "AI Business Intelligence" },
+                { coords: [1.3521, 103.8198], name: "Singapore", popup: "Smart Nation AI Hub" }
+            ];
+
+            aiHubs.forEach(hub => {
+                const marker = L.marker(hub.coords).addTo(map)
+                    .bindPopup(`<b>${hub.name}</b><br>${hub.popup}`);
+                newsMarkers.push(marker);
+            });
+        }
+
+        function toggleMapMarkers() {
+            showMarkers = !showMarkers;
+            const btn = document.getElementById("mapToggle");
+            if (showMarkers) {
+                newsMarkers.forEach(marker => marker.addTo(map));
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide News Locations';
+            } else {
+                newsMarkers.forEach(marker => map.removeLayer(marker));
+                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Show News Locations';
+            }
+        }
+
+        function updateMapTheme() {
+            // Leaflet doesn't have native dark mode, but we can adjust markers
+            newsMarkers.forEach(marker => {
+                marker.setIcon(L.divIcon({
+                    className: 'custom-div-icon',
+                    html: '<i class="fas fa-map-marker-alt" style="color: #2563eb; font-size: 24px;"></i>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                }));
+            });
+        }
+
+        // Particles animation
+        function createParticles() {
+            const particles = document.getElementById("particles");
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement("div");
+                particle.className = "particle";
+                particle.style.left = Math.random() * 100 + "%";
+                particle.style.animationDelay = Math.random() * 20 + "s";
+                particle.style.animationDuration = (Math.random() * 10 + 15) + "s";
+                particles.appendChild(particle);
+            }
+        }
+
+        // Fetch functions remain the same
+        async function fetchNews() {
+            try {
+                const res = await fetch(`${API}/news`, {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                
+                if (res.status === 403) {
+                    alert("Session expired. Please login again.");
+                    logout();
+                    return;
+                }
+                
+                const data = await res.json();
+                document.getElementById("loader").style.display = "none";
+                allNews = data.news || [];
+                displayNews(allNews);
+            } catch (error) {
+                document.getElementById("loader").innerText = "⚠️ Error loading news. Please try again.";
+            }
+        }
+
+        async function fetchTrending() {
+            try {
+                const res = await fetch(`${API}/trending`, {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const data = await res.json();
+                
+                const box = document.getElementById("trending");
+                box.innerHTML = "";
+                (data.trending || []).forEach(t => {
+                    const el = document.createElement("span");
+                    el.className = "trend";
+                    el.textContent = `#${t}`;
+                    el.onclick = () => {
+                        document.getElementById("search").value = t;
+                        filterNews();
+                    };
+                    box.appendChild(el);
+                });
+            } catch (error) {
+                console.error("Trending fetch failed");
+            }
+        }
+
+        function displayNews(list) {
+            const container = document.getElementById("news");
+            container.innerHTML = "";
+
+            list.forEach((item, i) => {
+                const cls = item.sentiment?.toLowerCase().includes("positive") ? "positive" :
+                           item.sentiment?.toLowerCase().includes("negative") ? "negative" : "neutral";
+
+                const div = document.createElement("div");
+                div.className = "card";
+                div.innerHTML = `
+                    <div class="card-meta">
+                        <span>${item.category || 'Uncategorized'}</span>
+                        <span class="badge ${cls}">${item.sentiment || 'Neutral'}</span>
+                    </div>
+                    <h3>${item.title}</h3>
+                    <p class="card-summary">${item.summary}</p>
+                `;
+
+                container.appendChild(div);
+                setTimeout(() => div.classList.add("show"), i * 100);
+            });
+        }
+
+        function filterNews() {
+            const text = document.getElementById("search").value.toLowerCase();
+            const cat = document.getElementById("filter").value;
+
+            const filtered = allNews.filter(n =>
+                n.title.toLowerCase().includes(text) &&
+                (cat === "All" || n.category === cat)
+            );
+
+            displayNews(filtered);
+        }
+
+        // Event listeners
+        let debounceTimer;
+        document.getElementById("search").addEventListener("input", () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(filterNews, 300);
+        });
+        document.getElementById("filter").addEventListener("change", filterNews);
+
+        // Initialize
+        createParticles();
+        initMap();
+        fetchTrending();
+        fetchNews();
+    </script>
+</body>
+</html>
