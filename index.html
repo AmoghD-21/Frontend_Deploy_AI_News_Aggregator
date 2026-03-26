@@ -394,6 +394,7 @@
                     method: 'POST'
                 });
                 const data = await res.json();
+                console.log(data)
 
                 if (currentMode === 'login' && data.access_token) {
                     localStorage.setItem('token', data.access_token);
