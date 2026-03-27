@@ -392,13 +392,21 @@
 
             try {
                 const endpoint = `/${currentMode}`;
-                const res = await fetch(`${API}${endpoint}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
+                const url = `${API}${endpoint}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+                const res = await fetch(url, {
                     method: 'POST'
                 });
-                const data = await res.json();
+                const raw = await res.text();
+                let data = {};
+                try {
+                    data = raw ? JSON.parse(raw) : {};
+                } catch (_) {
+                    data = {};
+                }
 
                 if (!res.ok) {
-                    showMessage(data.error || data.message || 'Request failed. Please try again.', 'error');
+                    const serverMsg = data.error || data.message || `HTTP ${res.status}`;
+                    showMessage(`Request failed: ${serverMsg}`, 'error');
                     return;
                 }
 
@@ -410,7 +418,7 @@
                     showMessage(data.message || data.error || `${currentMode} successful!`, 'success');
                 }
             } catch (error) {
-                showMessage('Connection error. Check server & retry.', 'error');
+                showMessage(`Network error: ${error.message || 'Check API URL/CORS and retry.'}`, 'error');
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('loading');
@@ -429,5 +437,4 @@
     </script>
 </body>
 </html>
-
 <!-- 425 -->
