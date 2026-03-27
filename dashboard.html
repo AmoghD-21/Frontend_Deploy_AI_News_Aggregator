@@ -496,7 +496,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        const API = "https://web-production-a1bf3.up.railway.app/";
+        const API = "https://web-production-a1bf3.up.railway.app";
         let allNews = [];
         let map;
         let newsMarkers = [];
@@ -600,12 +600,16 @@
                     headers: { "Authorization": "Bearer " + token }
                 });
                 
-                if (res.status === 403) {
+                if (res.status === 401 || res.status === 403) {
                     alert("Session expired. Please login again.");
                     logout();
                     return;
                 }
-                
+
+                if (!res.ok) {
+                    throw new Error("Failed to fetch news");
+                }
+
                 const data = await res.json();
                 document.getElementById("loader").style.display = "none";
                 allNews = data.news || [];
@@ -620,6 +624,10 @@
                 const res = await fetch(`${API}/trending`, {
                     headers: { "Authorization": "Bearer " + token }
                 });
+                if (!res.ok) {
+                    throw new Error("Failed to fetch trending");
+                }
+
                 const data = await res.json();
                 
                 const box = document.getElementById("trending");
@@ -691,3 +699,7 @@
     </script>
 </body>
 </html>
+
+
+
+<!-- 694 -->

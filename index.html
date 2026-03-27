@@ -297,10 +297,10 @@
             </div>
             <h1 class="form-title" id="form-title">Welcome Back</h1>
             <div class="toggle-header">
-                <button class="toggle-btn active" onclick="switchMode('login')">
+                <button class="toggle-btn active" onclick="switchMode('login', this)">
                     <i class="fas fa-sign-in-alt me-1"></i>Sign In
                 </button>
-                <button class="toggle-btn" onclick="switchMode('signup')">
+                <button class="toggle-btn" onclick="switchMode('signup', this)">
                     <i class="fas fa-user-plus me-1"></i>Join Us
                 </button>
             </div>
@@ -320,7 +320,9 @@
             <div id="msg" class="message"></div>
         </div>
     </div>
+
     <script>
+        // const API = "http://127.0.0.1:8000";
         const API = "https://web-production-a1bf3.up.railway.app";
         let currentMode = 'login';
 
@@ -360,11 +362,11 @@
         }
         initParticles();
 
-        function switchMode(mode) {
+        function switchMode(mode, buttonEl) {
             currentMode = mode;
             document.getElementById('form-title').textContent = mode === 'login' ? 'Welcome Back' : 'Create Account';
             document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (buttonEl) buttonEl.classList.add('active');
             document.getElementById('submit-btn').querySelector('span').textContent = mode === 'login' ? 'Sign In' : 'Sign Up';
         }
 
@@ -394,7 +396,11 @@
                     method: 'POST'
                 });
                 const data = await res.json();
-                console.log(data)
+
+                if (!res.ok) {
+                    showMessage(data.error || data.message || 'Request failed. Please try again.', 'error');
+                    return;
+                }
 
                 if (currentMode === 'login' && data.access_token) {
                     localStorage.setItem('token', data.access_token);
@@ -423,3 +429,5 @@
     </script>
 </body>
 </html>
+
+<!-- 425 -->
